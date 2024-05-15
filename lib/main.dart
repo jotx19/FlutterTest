@@ -34,6 +34,10 @@ class _MyHomePageState extends State<MyHomePage> {
   var _counter = 0;
   var myFontSize = 30.0;
 
+  void buttonClicked(){
+
+  }
+
   void setNewValue(double value)
   {
     setState(() {
@@ -66,9 +70,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
             Text('You have pushed the button this many times:', style: TextStyle(fontSize: myFontSize, color: Colors.black), // Link to myFontSize
             ),
-            Image.asset("images/algonquin.jpg", width: 200, height:200),
+            // Image.asset("images/algonquin.jpg", width: 200, height:200),
             Text('$_counter', style: TextStyle(fontSize: myFontSize, color:Colors.red) ,),
-            Slider(value:_counter.toDouble(), max:100.0, onChanged: setNewValue, min:0.0 )
+            Slider(value:_counter.toDouble(), max:100.0, onChanged: setNewValue, min:0.0 ),
+            ElevatedButton(
+              onPressed: buttonClicked,
+               child: Image.asset("images/algonquin.jpg", width: 200, height:200)
+
+          ),
           ],
         ),
       ),
