@@ -33,6 +33,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   var _counter = 0;
   var myFontSize = 30.0;
+  var isChecked = false;
 
   void buttonClicked(){
 
@@ -76,8 +77,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: buttonClicked,
                child: Image.asset("images/algonquin.jpg", width: 200, height:200)
-
           ),
+            Checkbox(value: isChecked, onChanged:(newValue) { setState( () { isChecked = newValue !; } ); }),
+            Switch(value: isChecked, onChanged:(newValue) { setState( () { isChecked = newValue !; } ); })
           ],
         ),
       ),
