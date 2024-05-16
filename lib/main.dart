@@ -34,6 +34,19 @@ class _MyHomePageState extends State<MyHomePage> {
   var _counter = 0;
   var myFontSize = 30.0;
   var isChecked = false;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void buttonClicked(){
 
@@ -72,6 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
             Text('You have pushed the button this many times:', style: TextStyle(fontSize: myFontSize, color: Colors.black), // Link to myFontSize
             ),
             // Image.asset("images/algonquin.jpg", width: 200, height:200),
+            TextField(controller: _controller,
+                decoration: InputDecoration(
+                    hintText:"Type here",
+                    border: OutlineInputBorder(),
+                    labelText: "First name"
+                )),
             Text('$_counter', style: TextStyle(fontSize: myFontSize, color:Colors.red) ,),
             Slider(value:_counter.toDouble(), max:100.0, onChanged: setNewValue, min:0.0 ),
             ElevatedButton(
@@ -80,6 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
             Checkbox(value: isChecked, onChanged:(newValue) { setState( () { isChecked = newValue !; } ); }),
             Switch(value: isChecked, onChanged:(newValue) { setState( () { isChecked = newValue !; } ); })
+
           ],
         ),
       ),
