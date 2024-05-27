@@ -35,13 +35,13 @@ class MyHomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             ElevatedButton(
-            onPressed: () {},
-        child: Text('Button 1'),
+              onPressed: () {},
+              child: Text('Button 1'),
             ),
-        ElevatedButton(
-          onPressed: () {},
-          child: Text('Button 2'),
-        ),
+            ElevatedButton(
+              onPressed: () {},
+              child: Text('Button 2'),
+            ),
             ElevatedButton(
               onPressed: () {},
               child: Text('Button 3'),
@@ -50,6 +50,12 @@ class MyHomePage extends StatelessWidget {
           ],
         ),
       ),
+        bottomNavigationBar: BottomNavigationBar(items: [
+          BottomNavigationBarItem( icon: Icon(Icons.camera), label: 'Camera' ),
+          BottomNavigationBarItem( icon: Icon(Icons.add_call), label: 'Phone'  ),
+        ],
+          onTap: (buttonIndex) {  } ,
+        )
     );
   }
 }
