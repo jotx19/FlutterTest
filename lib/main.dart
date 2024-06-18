@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'OtherPage.dart';
+import 'DataRepository.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,7 +17,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.light(),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter demo'),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const MyHomePage(title: 'Flutter demo'),
+        '/otherPage': (context) => OtherPage(),
+      },
     );
   }
 }
@@ -57,6 +63,13 @@ class _LoginPageState extends State<MyHomePage> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  void snackWoman()
+  { final snackBar = SnackBar(
+    content: Text('Welcome To this Page ${DataRepository.loginID}'),
+  );
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   void window() {
     showDialog(
       context: context,
@@ -68,6 +81,7 @@ class _LoginPageState extends State<MyHomePage> {
             onPressed: () {
               saver();
               Navigator.pop(context);
+              nextPage();
             },
             child: const Text('Yes'),
           ),
@@ -75,6 +89,7 @@ class _LoginPageState extends State<MyHomePage> {
             onPressed: () {
               clearData();
               Navigator.pop(context);
+              nextPage();
             },
             child: const Text('No'),
           ),
@@ -128,6 +143,15 @@ class _LoginPageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  void nextPage()
+  {
+    if(_passwords.text == 'prab') {
+      DataRepository.loginID = _login.text;
+      Navigator.pushNamed(context, '/otherPage');
+      snackWoman();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,7 +166,7 @@ class _LoginPageState extends State<MyHomePage> {
         ),
         backgroundColor: Colors.amber,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
@@ -169,6 +193,7 @@ class _LoginPageState extends State<MyHomePage> {
               },
               child: Text('Login'),
             ),
+            SizedBox(height: 40),
             SizedBox(height: 40),
             Image.asset(
               imageSource,
