@@ -14,9 +14,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'To Do List',
+      title: 'TODO LIST',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.purple,
+        brightness: Brightness.dark,
+        textTheme: TextTheme(
+          bodyText1: TextStyle(fontSize: 18.0, color: Colors.white),
+          bodyText2: TextStyle(fontSize: 16.0, color: Colors.white70),
+          headline6: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+        ),
       ),
       home: const ToDoListPage(),
     );
@@ -110,7 +116,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
           if ((width > height) && (width > 720)) {
             return Scaffold(
               appBar: AppBar(
-                title: const Text('To Do List'),
+                title: const Text('TODO LIST')
               ),
               body: Row(
                 children: [
@@ -202,20 +208,24 @@ class ToDoList extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter a to-do item',
                     border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white24,
                   ),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
               const SizedBox(width: 8),
               FloatingActionButton(
+                backgroundColor: Colors.amber,
                 onPressed: () {
                   if (controller.text.isNotEmpty) {
                     addItem(dao, controller.text);
                   }
                 },
-                child: const Icon(Icons.add),
+                child: const Icon(Icons.add, color: Colors.white),
               ),
             ],
           ),
@@ -228,9 +238,16 @@ class ToDoList extends StatelessWidget {
             itemBuilder: (context, index) {
               return GestureDetector(
                 onTap: () => selectItem(items[index]),
-                child: ListTile(
-                  leading: Text('Row Number: ${index + 1}'),
-                  title: Text(items[index].message),
+                child: Card(
+                  color: Colors.purple[600],
+                  margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.amber,
+                      child: Text('${index + 1}', style: TextStyle(color: Colors.black)),
+                    ),
+                    title: Text(items[index].message, style: TextStyle(color: Colors.white)),
+                  ),
                 ),
               );
             },
@@ -260,12 +277,18 @@ class DetailsPage extends StatelessWidget {
     if (item == null) {
       return Center(child: Text("No item selected"));
     } else {
-      return Column(
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text("Item: ${item!.message}"),
-            Text("ID: ${item!.id}"),
+            Text("Item: ${item!.message}", style: Theme.of(context).textTheme.headline6),
+            const SizedBox(height: 8),
+            Text("ID: ${item!.id}", style: Theme.of(context).textTheme.bodyText2),
+            const SizedBox(height: 16),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+              ),
               onPressed: () async {
                 await removeItem(dao, item!.id!);
                 clearSelection();
@@ -273,7 +296,8 @@ class DetailsPage extends StatelessWidget {
               child: const Text("Delete"),
             ),
           ],
-          );
+        ),
+      );
     }
-    }
+  }
 }
