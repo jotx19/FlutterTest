@@ -1,208 +1,279 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'OtherPage.dart';
-import 'DataRepository.dart';
+import 'ToDoDAO.dart';
+import 'ToDoDatabase.dart';
+import 'ToDoItem.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
+      title: 'To Do List',
       theme: ThemeData(
-        colorScheme: ColorScheme.light(),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const MyHomePage(title: 'Flutter demo'),
-        '/otherPage': (context) => OtherPage(),
+      home: const ToDoListPage(),
+    );
+  }
+}
+
+class ToDoListPage extends StatefulWidget {
+  const ToDoListPage({super.key});
+
+  @override
+  _ToDoListPageState createState() => _ToDoListPageState();
+}
+
+class _ToDoListPageState extends State<ToDoListPage> {
+  List<ToDoItem> _items = [];
+  final TextEditingController _controller = TextEditingController();
+  late Future<ToDoDao> _myDAO;
+  ToDoItem? _selectedItem;
+
+  @override
+  void initState() {
+    super.initState();
+    _myDAO = _initDatabase(); // Directly assign the Future
+    _myDAO.then((dao) { // Use then() to handle the Future's result
+      _fetchItems(dao); // Fetch items after the dao is ready
+    });
+  }
+
+  Future<ToDoDao> _initDatabase() async {
+    final database = await $FloorToDoDatabase.databaseBuilder('app_database.db').build();
+    return database.toDoDao;
+  }
+
+  Future<void> _fetchItems(ToDoDao dao) async {
+    final items = await dao.getAllItems();
+    setState(() {
+      _items = items;
+    });
+  }
+
+  Future<void> _addItem(ToDoDao dao, String message) async {
+    final newItem = ToDoItem(null, message);
+    await dao.insertItem(newItem);
+    await _fetchItems(dao);
+    _controller.clear();
+  }
+
+  Future<void> _removeItem(ToDoDao dao, int id) async {
+    await dao.deleteItem(_items.firstWhere((item) => item.id == id));
+    await _fetchItems(dao);
+    setState(() {
+      _selectedItem = null; // Clear selection after deletion
+    });
+  }
+
+  void _selectItem(ToDoItem item) {
+    setState(() {
+      _selectedItem = item;
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedItem = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ToDoDao>(
+      future: _myDAO,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),
+          );
+        } else if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: Text('Database initialization failed')),
+          );
+        } else {
+          final dao = snapshot.data!;
+          var size = MediaQuery.of(context).size;
+          var height = size.height;
+          var width = size.width;
+
+          if ((width > height) && (width > 720)) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('To Do List'),
+              ),
+              body: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: ToDoList(
+                      items: _items,
+                      controller: _controller,
+                      dao: dao,
+                      addItem: _addItem,
+                      removeItem: _removeItem,
+                      selectItem: _selectItem,
+                    ),
+                  ),
+                  _selectedItem != null
+                      ? Expanded(
+                    flex: 2,
+                    child: DetailsPage(
+                      item: _selectedItem,
+                      dao: dao,
+                      removeItem: _removeItem,
+                      clearSelection: _clearSelection,
+                    ),
+                  )
+                      : Container(),
+                ],
+              ),
+            );
+          } else {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('To Do List'),
+                leading: _selectedItem != null
+                    ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _clearSelection,
+                )
+                    : null,
+              ),
+              body: _selectedItem == null
+                  ? ToDoList(
+                items: _items,
+                controller: _controller,
+                dao: dao,
+                addItem: _addItem,
+                removeItem: _removeItem,
+                selectItem: _selectItem,
+              )
+                  : DetailsPage(
+                item: _selectedItem,
+                dao: dao,
+                removeItem: _removeItem,
+                clearSelection: _clearSelection,
+              ),
+            );
+          }
+        }
       },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title});
+class ToDoList extends StatelessWidget {
+  final List<ToDoItem> items;
+  final TextEditingController controller;
+  final ToDoDao dao;
+  final Future<void> Function(ToDoDao, String) addItem;
+  final Future<void> Function(ToDoDao, int) removeItem;
+  final void Function(ToDoItem) selectItem;
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<MyHomePage> {
-  late TextEditingController _login;
-  late TextEditingController _passwords;
-  String imageSource = 'images/question-mark.png';
-
-  void _logining() {
-    setState(() {
-      if (_passwords.text == 'QWERTY123') {
-        imageSource = 'images/idea.png';
-      } else {
-        imageSource = 'images/stop.png';
-      }
-    });
-  }
-
-  void snackMan(String message) {
-    final snackBar = SnackBar(
-      content: Text(message),
-      action: SnackBarAction(
-        label: 'Clear',
-        onPressed: () {
-          clearData();
-        },
-      ),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  void snackWoman()
-  { final snackBar = SnackBar(
-    content: Text('Welcome To this Page ${DataRepository.loginID}'),
-  );
-  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  void window() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Save?'),
-        content: const Text('Save the credentials?'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              saver();
-              Navigator.pop(context);
-              nextPage();
-            },
-            child: const Text('Yes'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              clearData();
-              Navigator.pop(context);
-              nextPage();
-            },
-            child: const Text('No'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void saver() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString("LoginName", _login.text);
-    await prefs.setString("Password", _passwords.text);
-  }
-
-  void loader() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? loginName = prefs.getString("LoginName");
-    String? password = prefs.getString("Password");
-
-    if (loginName != null && password != null) {
-      setState(() {
-        _login.text = loginName;
-        _passwords.text = password;
-      });
-      snackMan('Fields are loaded');
-    }
-  }
-
-  void clearData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove("LoginName");
-    await prefs.remove("Password");
-    setState(() {
-      _login.clear();
-      _passwords.clear();
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _login = TextEditingController();
-    _passwords = TextEditingController();
-    loader();
-  }
-
-  @override
-  void dispose() {
-    _login.dispose();
-    _passwords.dispose();
-    super.dispose();
-  }
-
-  void nextPage()
-  {
-    if(_passwords.text == 'prab') {
-      DataRepository.loginID = _login.text;
-      Navigator.pushNamed(context, '/otherPage');
-      snackWoman();
-    }
-  }
+  const ToDoList({
+    Key? key,
+    required this.items,
+    required this.controller,
+    required this.dao,
+    required this.addItem,
+    required this.removeItem,
+    required this.selectItem,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Login page',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 38,
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter a to-do item',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FloatingActionButton(
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    addItem(dao, controller.text);
+                  }
+                },
+                child: const Icon(Icons.add),
+              ),
+            ],
           ),
         ),
-        backgroundColor: Colors.amber,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _login,
-              decoration: InputDecoration(
-                labelText: 'Login',
-                labelStyle: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            TextField(
-              controller: _passwords,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                labelStyle: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              obscureText: true,
-            ),
-            SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                _logining();
-                window();
-              },
-              child: Text('Login'),
-            ),
-            SizedBox(height: 40),
-            SizedBox(height: 40),
-            Image.asset(
-              imageSource,
-              width: 300,
-              height: 300,
-            ),
-          ],
+        Expanded(
+          child: items.isEmpty
+              ? const Center(child: Text("There are no items in the list"))
+              : ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () => selectItem(items[index]),
+                child: ListTile(
+                  leading: Text('Row Number: ${index + 1}'),
+                  title: Text(items[index].message),
+                ),
+              );
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
+}
+
+class DetailsPage extends StatelessWidget {
+  final ToDoItem? item;
+  final ToDoDao dao;
+  final Future<void> Function(ToDoDao, int) removeItem;
+  final VoidCallback clearSelection;
+
+  const DetailsPage({
+    Key? key,
+    required this.item,
+    required this.dao,
+    required this.removeItem,
+    required this.clearSelection,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (item == null) {
+      return Center(child: Text("No item selected"));
+    } else {
+      return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text("Item: ${item!.message}"),
+            Text("ID: ${item!.id}"),
+            ElevatedButton(
+              onPressed: () async {
+                await removeItem(dao, item!.id!);
+                clearSelection();
+              },
+              child: const Text("Delete"),
+            ),
+          ],
+          );
+    }
+    }
 }
